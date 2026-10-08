@@ -1,0 +1,38 @@
+name: Render video denah
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan:
+        description: "File denah (mis. plans/rumah-10x15.json) atau 'all'"
+        default: "all"
+      music:
+        description: "Nama file di assets/music (kosong = acak jika ada, 'none' = tanpa musik)"
+        default: ""
+  push:
+    paths:
+      - "plans/**"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - name: Install ffmpeg dan font
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-noto-core
+      - run: npm ci
+      - name: Render
+        env:
+          PLAN: ${{ github.event.inputs.plan || 'all' }}
+          MUSIC: ${{ github.event.inputs.music || '' }}
+        run: node render.js
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-denah
+          path: out/*.mp4
+          retention-days: 14
