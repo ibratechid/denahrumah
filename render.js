@@ -15,8 +15,13 @@ const DUR = Math.min(+env.DURATION || 10, 10); // maksimal 10 detik
 const PLAN = env.PLAN || 'all';
 const MUSIC = env.MUSIC || ''; // nama file di assets/music, '' = acak jika ada, 'none' = tanpa musik
 
+// cek file penting sebelum mulai
+for (const f of ['web/index.html', 'node_modules/three/build/three.module.js', 'plans']) {
+  if (!fs.existsSync(path.join(ROOT, f))) { console.error(`FILE HILANG: ${f} (cek upload repo / npm ci)`); process.exit(1); }
+}
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 const server = http.createServer((req, res) => {
+  if (req.url.startsWith('/favicon')) { res.writeHead(204); return res.end(); }
   const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
   if (!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': mime[path.extname(p)] || 'application/octet-stream' });
@@ -54,9 +59,14 @@ for (const plan of plans) {
   const page = await browser.newPage();
   await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
   page.on('pageerror', (e) => { console.error('PAGE ERROR:', e.message); failed = true; });
+  page.on('response', (x) => { if (x.status() >= 400) console.error('HTTP', x.status(), x.url()); });
+  page.on('requestfailed', (x) => console.error('REQUEST GAGAL', x.url()));
   page.on('console', (m) => { if (m.type() === 'error') console.error('console:', m.text()); });
   await page.goto(`${base}/web/index.html?plan=/${plan}&w=${W}&h=${H}`, { waitUntil: 'load' });
-  await page.waitForFunction('window.ready===true', { timeout: 60000 });
+  await page.waitForFunction('window.ready===true', { timeout: 60000 }).catch((e) => {
+    console.error('Halaman tidak siap. Lihat pesan HTTP/PAGE ERROR di atas (404 = file hilang, WebGL = Chrome gagal buat konteks 3D).');
+    throw e;
+  });
   const total = Math.round(DUR * FPS);
   console.log(`[${name}] render ${total} frame ${W}x${H} @${FPS}fps`);
   const t0 = Date.now();
