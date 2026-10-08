@@ -1,0 +1,2 @@
+Catat sumber & lisensi tiap lagu di sini, contoh:
+lofi1.mp3 | Sumber: YouTube Audio Library | Lisensi: bebas pakai (cek apakah perlu atribusi)
