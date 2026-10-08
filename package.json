@@ -1,0 +1,9 @@
+{
+  "name": "denah-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Video animasi denah rumah (maks 10 detik) dari file JSON",
+  "scripts": { "render": "node render.js" },
+  "dependencies": { "puppeteer": "^23.11.1", "three": "0.160.0" }
+}
